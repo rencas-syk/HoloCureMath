@@ -4,12 +4,11 @@ import cv2
 import numpy as np
 import os
 import sys
-from PyQt6.QtWidgets import QLabel, QMainWindow, QWidget, QApplication
+from PyQt6.QtWidgets import QLabel, QMainWindow, QApplication
 from PyQt6.QtGui import QFont, QFontDatabase
 from PyQt6.QtCore import Qt
 from threading import Thread
-from time import sleep
-from pyautogui import locate
+
 
 
 
@@ -138,88 +137,6 @@ class Runner():
         self.active = False
         self.t.join()
 
-class OverlayLabel(QLabel):
-    def __init__(self):
-        super().__init__()
-        self.setWindowFlags(Qt.WindowType.WindowTransparentForInput | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setFixedSize(73,39)
-        self.setFont(QFont('Joystix Monospace', int(22*self.width()/63)))
-        self.setStyleSheet("color: white; \
-                           background-color: rgba(127,0, 0,127);")
-        self.setText('...')
-        # self._start()
-
-    
-
-    def updateRegion(hwnd):
-        window = win32gui.GetClientRect(hwnd)
-        abs_pos1 = window[0], window[1]
-        abs_pos2 = window[2], window[3]
-        pos1 = win32gui.ClientToScreen(hwnd,abs_pos1)
-        pos2 = win32gui.ClientToScreen(hwnd,abs_pos2)
-        region = tuple([*pos1, *pos2])
-
-        return region
-    
-    def _preprocess(self, frame:np.ndarray) -> np.ndarray:
-        grayscale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        _, binarized = cv2.threshold(grayscale,220,255,cv2.THRESH_BINARY)
-        return binarized
-    
-    def resize_template(self, template, scalar):
-        if scalar < 1:
-            return cv2.resize(template,None, fx = scalar, fy = scalar, interpolation = cv2.INTER_AREA)
-        elif scalar > 1:
-            return cv2.resize(template,None, fx = scalar, fy = scalar, interpolation = cv2.INTER_CUBIC)
-        else:
-            return template
-
-    def _start(self):
-        self.t = Thread(target=self._run, args=())
-        self.active = True
-        self.t.start()        
-    
-    def _run(self):
-        sct = mss()
-        template = resource_path('pag.png')
-
-        while self.active:
-            try:
-                hwnd = win32gui.FindWindowEx(None, None, None, 'HoloCure')
-                region, width, height = self.updateRegion(hwnd)
-                if height != prev_height:
-                    template = self.resize_template(template=template, scalar= height / 1080)
-                    prev_height = height
-            except Exception as e:
-                hwnd = None
-                self.display = ('...')
-                self.hide()
-                continue
-            img = np.array(sct.grab(region))
-            img = self._preprocess(img)
-            try:
-                box = locate(template, img)
-                abs_pos1 = win32gui.ClientToScreen(hwnd, (box.left, box.top))
-                self.setFixedSize(box.width+10, box.height)
-                self.move(abs_pos1[0], abs_pos1[1])
-            except:
-                self.hide()
-
-    def _stop(self):
-        self.active = False
-        self.t.join()
-    
-    def closeEvent(self, a0):
-        self._stop()
-        return super().closeEvent(a0)
-
-    def showEvent(self, a0):
-        self._start()
-        self.move(0,0)
-        return super().showEvent(a0)
-
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -237,27 +154,16 @@ class MainWindow(QMainWindow):
         self.cwidget.setText(self.content)
 
         self.setCentralWidget(self.cwidget)
-
-        # self.overlay = OverlayLabel()
-        # self.overlay.show()
-
         self.show()
-
-
 
         self.runner = Runner()
         self.runner.subscribe(self)
         self.runner._start()
 
-
     def receiveDisplayMessage(self, displayMessage):
         self.cwidget.setText(displayMessage)
-        #self.overlay.setText(displayMessage)
-    
-
 
     def closeEvent(self, event):
-        #self.overlay.close()
         self.runner._stop()
         super().closeEvent(event)
         
