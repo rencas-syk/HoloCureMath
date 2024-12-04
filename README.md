@@ -19,3 +19,8 @@ Solving HoloCure equations with computer vision.
 - Add support for all resolutions
 - Add overlay option to display the solution over "???" (90% done)
 - Integration into more comprehensive automation interface (soon<sup>TM</sup>)
+
+## Notes
+
+This repository does not contain all required files to run the scripts by themselves. <br>
+If you wish to run the source code as is, you need to create the required template image files and download the [Joystix-Monospace Font](https://typodermicfonts.com/proportional-joystix/)
