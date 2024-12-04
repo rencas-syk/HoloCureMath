@@ -1,0 +1,7 @@
+*.otf
+img/
+*.png
+*.ipynb
+*.spec
+build/
+dist/
